@@ -6,10 +6,20 @@ var bodyParser = require('body-parser');
 var ejs = require('ejs');
 var engine = require('ejs-mate');
 // ejs-mate not working, hyphen screws things up
+var session = require('express-session');
+var cookieParser = require('cookie-parser');
+// express uses a cookie to store a session id, session id is an encryption signature, on subsequent requests, uses the value of the cookie to retrieve session information stored on the server, this server side storage can be a memory store by default, or can use other data stores like connect-redis npm OR connect-mongo
+// session is stored in the server, cookie is stored in the browser
+var flash = require('express-flash');
+// Flash is an extension of connect-flash with the ability to define a flash message and render it without redirecting the request.
+var MongoStore = require('connect-mongo/es5')(session);
+var passport = require('passport');
+var secret = require('./config/secret');
 var User = require('./models/user');
 var app = express();
 
-mongoose.connect('mongodb://cho:30101993@ds115870.mlab.com:15870/ecommerce',function(err){
+
+mongoose.connect(secret.database,function(err){
   if (err) {
     console.log(err);
   } else {
@@ -17,12 +27,24 @@ mongoose.connect('mongodb://cho:30101993@ds115870.mlab.com:15870/ecommerce',func
   }
 });
 
-// middleware
+// middleware - software that acts as a bridge between an operating system or database and applications, especially on a network.
 app.use(express.static(__dirname + '/public'));
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 // in mongodb type of data saved only from x-www-form-urlencoded --> form-data wont work
+app.use(cookieParser());
+app.use(session({
+  resave: true,
+  // forces the session to be saved
+  saveUninitialized: true,
+  // forced the session that is unitialized to be saved to the memory store
+  secret: secret.secretKey,
+  store: new MongoStore({url: secret.database, autoReconnect: true})
+}));
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 
@@ -45,8 +67,8 @@ app.use(userRoutes);
 //   res.json('batman')
 // });
 
-app.listen(3000, function(err) {
+app.listen(secret.port, function(err) {
   // localhost:3000
   if(err) throw err;
-  console.log("Server is Running on port 3000")
+  console.log("Server is Running on port " + secret.port)
 });

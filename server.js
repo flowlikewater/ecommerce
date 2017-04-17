@@ -3,7 +3,10 @@ var morgan = require('morgan');
 // morgan logs all requests to the terminal
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
-var User = require('./models/user')
+var ejs = require('ejs');
+var engine = require('ejs-mate');
+// ejs-mate not working, hyphen screws things up
+var User = require('./models/user');
 var app = express();
 
 mongoose.connect('mongodb://cho:30101993@ds115870.mlab.com:15870/ecommerce',function(err){
@@ -15,21 +18,21 @@ mongoose.connect('mongodb://cho:30101993@ds115870.mlab.com:15870/ecommerce',func
 });
 
 // middleware
+app.use(express.static(__dirname + '/public'));
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
+// in mongodb type of data saved only from x-www-form-urlencoded --> form-data wont work
+app.engine('ejs', engine);
+app.set('view engine', 'ejs');
 
+var mainRoutes = require('./routes/main');
+var userRoutes = require('./routes/user');
 
-app.post('/create-user', function(req, res, next){
-  var user = new User();
-  user.profile.name = req.body.name;
-  user.password = req.body.password;
-  user.email = req.body.email;
-  user.save(function(err) {
-    if (err) next (err);
-    res.json('Successfully created a new user');
-  })
-})
+app.use(mainRoutes);
+app.use(userRoutes);
+
+// mainroute controlls how the url will look like, e.g. app.use('/batman', mainRoutes) will give you urls like '/batman', and '/batman/about'
 
 // app.get('/', function(req, res) {
 //   // request something from the Server

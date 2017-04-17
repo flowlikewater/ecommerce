@@ -29,9 +29,8 @@ UserSchema.pre('save', function(next){
  var user = this;
  // declaring a variable - this is equal to UserSchema
  if (!user.isModified('password')) return next();
-
  bcrypt.genSalt(10, function(err, salt) {
-  // generate salt with 10 different random data
+  // generate salt with 10 different random data, salt = kjasdiu123321
   if (err) return next(err);
   // if there is an error, return with a callback
   bcrypt.hash(user.password, salt, null, function(err, hash){
@@ -39,8 +38,8 @@ UserSchema.pre('save', function(next){
     if (err) return next(err);
     user.password = hash;
     next();
-  })
- })
+    });
+  });
 });
 
 /* Compare password in the database and the one that users type in */
